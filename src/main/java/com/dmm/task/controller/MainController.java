@@ -24,73 +24,81 @@ import com.dmm.task.service.TaskService;
 @Controller
 public class MainController {
 
-    @Autowired
-    private TaskService taskService;
+	@Autowired
+	private TaskService taskService;
 
-    @Autowired
-    private UsersRepository usersRepository;
+	@Autowired
+	private UsersRepository usersRepository;
 
-    @GetMapping("/main")
-    public String showMainPage(@RequestParam(required = false) String date, Model model) {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (!(principal instanceof AccountUserDetails)) {
-            return "redirect:/loginForm";
-        }
+	@GetMapping("/main")
+	public String showMainPage(@RequestParam(required = false) String date, Model model) {
+		Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		if (!(principal instanceof AccountUserDetails)) {
+			return "redirect:/loginForm";
+		}
 
-        AccountUserDetails userDetails = (AccountUserDetails) principal;
-        String userName = userDetails.getUsername();
+		AccountUserDetails userDetails = (AccountUserDetails) principal;
+		String userName = userDetails.getUsername();
 
-        Users user = usersRepository.findByUserName(userName);
-        boolean isAdmin = user != null && "ADMIN".equals(user.getRoleName());
+		Users user = usersRepository.findByUserName(userName);
+		boolean isAdmin = user != null && "ADMIN".equals(user.getRoleName());
 
-        LocalDate currentDate = (date == null) ? LocalDate.now() : LocalDate.parse(date);
+		LocalDate currentDate = (date == null) ? LocalDate.now() : LocalDate.parse(date);
 
-        // カレンダーのデータを作成
-        List<List<LocalDate>> calendar = generateCalendar(currentDate);
+		// カレンダーのデータを作成
+		List<List<LocalDate>> calendar = generateCalendar(currentDate);
 
-        // 月の開始日と終了日を計算
-        LocalDate startDate = currentDate.withDayOfMonth(1);
-        LocalDate endDate = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
+		// 月の開始日と終了日を計算
+		LocalDate startDate = currentDate.withDayOfMonth(1);
+		LocalDate endDate = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
 
-        // タスクを取得
-        List<Task> taskList = isAdmin 
-            ? taskService.getTasksByMonthForAdmin(startDate, endDate) 
-            : taskService.getTasksByMonthAndUser(startDate, endDate, userName);
+		// タスクを取得
+		List<Task> taskList = isAdmin
+				? taskService.getTasksByMonthForAdmin(startDate, endDate)
+				: taskService.getTasksByMonthAndUser(startDate, endDate, userName);
 
-        // 日付とタスクを紐付けるマップを作成
-        MultiValueMap<LocalDate, Task> tasks = new LinkedMultiValueMap<>();
-        for (Task task : taskList) {
-            tasks.add(task.getDate(), task);
-        }
+		// 日付とタスクを紐付けるマップを作成
+		MultiValueMap<LocalDate, Task> tasks = new LinkedMultiValueMap<>();
+		for (Task task : taskList) {
+			tasks.add(task.getDate(), task);
+		}
 
-        model.addAttribute("matrix", calendar);
-        model.addAttribute("tasks", tasks);
+		model.addAttribute("matrix", calendar);
+		model.addAttribute("tasks", tasks);
 
-        LocalDate prev = currentDate.minusMonths(1).withDayOfMonth(1);
-        LocalDate next = currentDate.plusMonths(1).withDayOfMonth(1);
-        model.addAttribute("prev", prev);
-        model.addAttribute("next", next);
+		LocalDate prev = currentDate.minusMonths(1).withDayOfMonth(1);
+		LocalDate next = currentDate.plusMonths(1).withDayOfMonth(1);
+		model.addAttribute("prev", prev);
+		model.addAttribute("next", next);
 
-        String currentMonth = currentDate.format(DateTimeFormatter.ofPattern("yyyy年MM月"));
-        model.addAttribute("month", currentMonth);
+		String currentMonth = currentDate.format(DateTimeFormatter.ofPattern("yyyy年MM月"));
+		model.addAttribute("month", currentMonth);
 
-        return "main";
-    }
+		return "main";
+	}
 
-    private List<List<LocalDate>> generateCalendar(LocalDate currentDate) {
-        List<List<LocalDate>> calendar = new ArrayList<>();
-        LocalDate firstDayOfMonth = currentDate.withDayOfMonth(1);
-        DayOfWeek firstDayOfWeek = firstDayOfMonth.getDayOfWeek();
-        LocalDate startDay = firstDayOfMonth.minusDays(firstDayOfWeek.getValue() % 7);
-
-        for (int i = 0; i < 6; i++) { // 最大6週
-            List<LocalDate> week = new ArrayList<>();
-            for (int j = 0; j < 7; j++) {
-                week.add(startDay);
-                startDay = startDay.plusDays(1);
-            }
-            calendar.add(week);
-        }
-        return calendar;
-    }
+	private List<List<LocalDate>> generateCalendar(LocalDate currentDate) {
+		List<List<LocalDate>> calendar = new ArrayList<>();
+		LocalDate firstDayOfMonth = currentDate.withDayOfMonth(1);
+		DayOfWeek firstDayOfWeek = firstDayOfMonth.getDayOfWeek();
+		LocalDate startDay = firstDayOfMonth.minusDays(firstDayOfWeek.getValue() % 7);
+		int weeksAdded = 0;
+		for (int i = 0; i < 6; i++) { // 最大6行
+			List<LocalDate> week = new ArrayList<>();
+			for (int j = 0; j < 7; j++) {
+				week.add(startDay);
+				startDay = startDay.plusDays(1);
+			}
+			// 5週目までのデータのみ追加
+			if (!week.get(0).isAfter(firstDayOfMonth.plusMonths(1).withDayOfMonth(1).minusDays(1))) {
+				calendar.add(week);
+				weeksAdded++;
+			}
+			// 5週目を超えたら終了
+			if (weeksAdded >= 5) {
+				break;
+			}
+		}
+		return calendar;
+	}
 }
