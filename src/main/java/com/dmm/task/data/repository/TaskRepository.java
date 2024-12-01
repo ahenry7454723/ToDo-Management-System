@@ -11,21 +11,14 @@ import com.dmm.task.data.entity.Task;
 
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
-    List<Task> findByName(String userName);
-
-    // 指定した年月のタスクを取得
-    @Query("SELECT t FROM Task t WHERE t.date >= :startDate AND t.date <= :endDate AND t.name = :userName")
-    List<Task> findTasksByMonthAndUser(@Param("startDate") LocalDate startDate, 
-                                       @Param("endDate") LocalDate endDate, 
-                                       @Param("userName") String userName);
-
-    @Query("SELECT t FROM Task t WHERE t.date >= :startDate AND t.date <= :endDate")
-    List<Task> findTasksByMonthForAdmin(@Param("startDate") LocalDate startDate, 
-                                        @Param("endDate") LocalDate endDate);
-    
     // 指定範囲のタスクを取得
- 	List<Task> findTasksByDateBetween(LocalDate startDate, LocalDate endDate);
+    @Query("SELECT t FROM Task t WHERE t.date BETWEEN :startDate AND :endDate")
+    List<Task> findTasksByDateRange(@Param("startDate") LocalDate startDate, 
+                                    @Param("endDate") LocalDate endDate);
 
- 	// 指定範囲とユーザーのタスクを取得
- 	List<Task> findTasksByDateBetweenAndName(LocalDate startDate, LocalDate endDate, String name);
- }
+    // 指定範囲とユーザー名で絞り込んだタスクを取得
+    @Query("SELECT t FROM Task t WHERE t.date BETWEEN :startDate AND :endDate AND t.name = :userName")
+    List<Task> findTasksByDateRangeAndUser(@Param("startDate") LocalDate startDate, 
+                                           @Param("endDate") LocalDate endDate, 
+                                           @Param("userName") String userName);
+}
