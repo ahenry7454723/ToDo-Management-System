@@ -79,9 +79,9 @@ public class MainController {
 
 	private List<List<LocalDate>> generateCalendar(LocalDate currentDate) {
 		List<List<LocalDate>> calendar = new ArrayList<>();
-		LocalDate firstDayOfMonth = currentDate.withDayOfMonth(1); // 当月の1日
-		DayOfWeek firstDayOfWeek = firstDayOfMonth.getDayOfWeek(); // 1日の曜日を取得
-		LocalDate startDay = firstDayOfMonth.minusDays(firstDayOfWeek.getValue() % 7); // カレンダーの開始日を計算
+		LocalDate firstDayOfMonth = currentDate.withDayOfMonth(1); // 月初日
+		DayOfWeek firstDayOfWeek = firstDayOfMonth.getDayOfWeek(); // 月初日の曜日
+		LocalDate startDay = firstDayOfMonth.minusDays(firstDayOfWeek.getValue() % 7); // カレンダーの開始日（前月の日曜日）
 
 		while (true) {
 			List<LocalDate> week = new ArrayList<>();
@@ -89,18 +89,17 @@ public class MainController {
 				week.add(startDay);
 				startDay = startDay.plusDays(1);
 			}
-
 			calendar.add(week);
 
-			// カレンダーの終了条件
-			LocalDate lastDayOfWeek = week.get(6); // 週の最後の日(土曜日)
-			if (lastDayOfWeek.isAfter(currentDate.withDayOfMonth(currentDate.lengthOfMonth())) // 当月の最終日を超えている
-					&& lastDayOfWeek.getDayOfWeek() == DayOfWeek.SATURDAY) { // かつ土曜日の場合終了
-				break;
+			// 最終日を計算
+			LocalDate lastDayOfMonth = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
+
+			// カレンダー終了条件
+			if (week.contains(lastDayOfMonth)) {
+				break; // 最終日を含む週までカレンダーを表示
 			}
 		}
 
 		return calendar;
 	}
-
 }
