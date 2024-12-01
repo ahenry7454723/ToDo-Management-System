@@ -45,11 +45,20 @@ public class MainController {
 
         LocalDate currentDate = (date == null) ? LocalDate.now() : LocalDate.parse(date);
 
+        // カレンダーのデータを作成
         List<List<LocalDate>> calendar = generateCalendar(currentDate);
 
-        MultiValueMap<LocalDate, Task> tasks = new LinkedMultiValueMap<>();
-        List<Task> taskList = isAdmin ? taskService.findAllTasks() : taskService.getTasksByUser(userName);
+        // 月の開始日と終了日を計算
+        LocalDate startDate = currentDate.withDayOfMonth(1);
+        LocalDate endDate = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
 
+        // タスクを取得
+        List<Task> taskList = isAdmin 
+            ? taskService.getTasksByMonthForAdmin(startDate, endDate) 
+            : taskService.getTasksByMonthAndUser(startDate, endDate, userName);
+
+        // 日付とタスクを紐付けるマップを作成
+        MultiValueMap<LocalDate, Task> tasks = new LinkedMultiValueMap<>();
         for (Task task : taskList) {
             tasks.add(task.getDate(), task);
         }
@@ -71,7 +80,6 @@ public class MainController {
     private List<List<LocalDate>> generateCalendar(LocalDate currentDate) {
         List<List<LocalDate>> calendar = new ArrayList<>();
         LocalDate firstDayOfMonth = currentDate.withDayOfMonth(1);
-        LocalDate lastDayOfMonth = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
         DayOfWeek firstDayOfWeek = firstDayOfMonth.getDayOfWeek();
         LocalDate startDay = firstDayOfMonth.minusDays(firstDayOfWeek.getValue() % 7);
 
@@ -82,11 +90,6 @@ public class MainController {
                 startDay = startDay.plusDays(1);
             }
             calendar.add(week);
-
-            // 次の週が当月外になった場合、ループを終了
-            if (startDay.isAfter(lastDayOfMonth) && startDay.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                break;
-            }
         }
         return calendar;
     }
