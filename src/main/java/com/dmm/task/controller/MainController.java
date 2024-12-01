@@ -45,17 +45,17 @@ public class MainController {
 
 		LocalDate currentDate = (date == null) ? LocalDate.now() : LocalDate.parse(date);
 
+		// カレンダーの開始日と終了日を計算（前月～翌月を含む範囲）
+		LocalDate startDay = currentDate.withDayOfMonth(1).minusDays(currentDate.withDayOfMonth(1).getDayOfWeek().getValue() % 7);
+		LocalDate endDay = currentDate.withDayOfMonth(currentDate.lengthOfMonth()).plusDays(6 - currentDate.withDayOfMonth(currentDate.lengthOfMonth()).getDayOfWeek().getValue());
+
+		// タスクを取得（前月・当月・翌月の範囲を含む）
+		List<Task> taskList = isAdmin
+				? taskService.getTasksByDateRange(startDay, endDay)
+				: taskService.getTasksByDateRangeAndUser(startDay, endDay, userName);
+
 		// カレンダーのデータを作成
 		List<List<LocalDate>> calendar = generateCalendar(currentDate);
-
-		// 月の開始日と終了日を計算
-		LocalDate startDate = currentDate.withDayOfMonth(1);
-		LocalDate endDate = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
-
-		// タスクを取得
-		List<Task> taskList = isAdmin
-				? taskService.getTasksByMonthForAdmin(startDate, endDate)
-				: taskService.getTasksByMonthAndUser(startDate, endDate, userName);
 
 		// 日付とタスクを紐付けるマップを作成
 		MultiValueMap<LocalDate, Task> tasks = new LinkedMultiValueMap<>();
@@ -79,24 +79,21 @@ public class MainController {
 
 	private List<List<LocalDate>> generateCalendar(LocalDate currentDate) {
 		List<List<LocalDate>> calendar = new ArrayList<>();
-		LocalDate firstDayOfMonth = currentDate.withDayOfMonth(1); // 月初日
-		DayOfWeek firstDayOfWeek = firstDayOfMonth.getDayOfWeek(); // 月初日の曜日
-		LocalDate startDay = firstDayOfMonth.minusDays(firstDayOfWeek.getValue() % 7); // カレンダーの開始日（前月の日曜日）
+		LocalDate firstDayOfMonth = currentDate.withDayOfMonth(1);
+		DayOfWeek firstDayOfWeek = firstDayOfMonth.getDayOfWeek();
+		LocalDate startDay = firstDayOfMonth.minusDays(firstDayOfWeek.getValue() % 7);
 
 		while (true) {
 			List<LocalDate> week = new ArrayList<>();
-			for (int i = 0; i < 7; i++) { // 1週間分の日付を追加
+			for (int i = 0; i < 7; i++) {
 				week.add(startDay);
 				startDay = startDay.plusDays(1);
 			}
 			calendar.add(week);
 
-			// 最終日を計算
 			LocalDate lastDayOfMonth = currentDate.withDayOfMonth(currentDate.lengthOfMonth());
-
-			// カレンダー終了条件
 			if (week.contains(lastDayOfMonth)) {
-				break; // 最終日を含む週までカレンダーを表示
+				break;
 			}
 		}
 

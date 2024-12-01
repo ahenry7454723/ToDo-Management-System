@@ -22,4 +22,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Query("SELECT t FROM Task t WHERE t.date >= :startDate AND t.date <= :endDate")
     List<Task> findTasksByMonthForAdmin(@Param("startDate") LocalDate startDate, 
                                         @Param("endDate") LocalDate endDate);
-}
+    
+    // 指定範囲のタスクを取得
+ 	List<Task> findTasksByDateBetween(LocalDate startDate, LocalDate endDate);
+
+ 	// 指定範囲とユーザーのタスクを取得
+ 	List<Task> findTasksByDateBetweenAndName(LocalDate startDate, LocalDate endDate, String name);
+ }

@@ -40,4 +40,12 @@ public class TaskService {
     public List<Task> getTasksByMonthForAdmin(LocalDate startDate, LocalDate endDate) {
         return taskRepository.findTasksByMonthForAdmin(startDate, endDate);
     }
+    
+    public List<Task> getTasksByDateRange(LocalDate start, LocalDate end) {
+		return taskRepository.findTasksByDateBetween(start, end);
+	}
+
+	public List<Task> getTasksByDateRangeAndUser(LocalDate start, LocalDate end, String userName) {
+		return taskRepository.findTasksByDateBetweenAndName(start, end, userName);
+	}
 }
